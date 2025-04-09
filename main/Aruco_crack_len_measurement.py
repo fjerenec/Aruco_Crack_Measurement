@@ -18,9 +18,10 @@ customtkinter.set_appearance_mode("Light")
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.geometry("1200x1000")
 
-        self.current_original_image = Image.open("/Users/filipjerenec/Python Projects/GitHub repos/Crack_measurement/aruca.jpg")
+        self.current_original_image = Image.open("main/aruca.jpg")
         # Class variables
         self.angle = 0  # Initial angle
 
@@ -108,11 +109,13 @@ class App(customtkinter.CTk):
         self.slider2_val = customtkinter.StringVar()
 
         self.slider1_entry = customtkinter.CTkEntry(master=self.slider_frame2d,width=70,textvariable=self.slider1_val)
+        self.slider1_entry.bind('<Return>', self.slider1_entry_update)
         self.slider1_entry.grid(row=0,column=1,padx=(10,5))
         self.slider1_entry.bind('<Return>', self.update)
 
 
         self.slider2_entry = customtkinter.CTkEntry(master=self.slider_frame2d,width=70,textvariable=self.slider2_val)
+        self.slider2_entry.bind('<Return>', self.slider2_entry_update)
         self.slider2_entry.grid(row=1,column=1,padx=(10,5))
 
 
@@ -159,7 +162,7 @@ class App(customtkinter.CTk):
 
         # create sub frame for scrolling buttons
         self.scroll_btn_frame = customtkinter.CTkFrame(master = self.measurements_frame3)
-        self.scroll_btn_frame.grid(row=1, column=0,padx = (4,4), pady= (2,4),sticky = "nsew")
+        self.scroll_btn_frame.grid(row=1, column=0,padx = (4,4), pady= (2,4),sticky = "nsew") 
         self.scroll_btn_frame.grid_columnconfigure(0,weight=1)
 
         # Create button to go to next and previous picture
@@ -245,11 +248,11 @@ class App(customtkinter.CTk):
         self.aruco_params = cv2.aruco.DetectorParameters()
 
         # Adjust detection settings
-        self.aruco_params.adaptiveThreshWinSizeMin = 3  # Smaller window size for adaptive thresholding
-        self.aruco_params.adaptiveThreshWinSizeMax = 50
-        self.aruco_params.adaptiveThreshWinSizeStep = 15
+        self.aruco_params.adaptiveThreshWinSizeMin = 15  # Smaller window size for adaptive thresholding
+        self.aruco_params.adaptiveThreshWinSizeMax = 101
+        self.aruco_params.adaptiveThreshWinSizeStep = 35
         self.aruco_params.minMarkerPerimeterRate = 0.1  # Minimum size of marker as a fraction of total image
-        self.aruco_params.maxMarkerPerimeterRate = 15.0  # Maximum size of marker as a fraction of total image
+        self.aruco_params.maxMarkerPerimeterRate = 100.0  # Maximum size of marker as a fraction of total image
         self.aruco_params.polygonalApproxAccuracyRate = 0.01  # Lower this if contours are missed
         self.aruco_params.minCornerDistanceRate = 0.01  # Allow corners to be closer
         self.aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
@@ -257,7 +260,8 @@ class App(customtkinter.CTk):
         self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
 
         # Phisycal size of the QR code, measure between the top two points
-        self.qr_code_size = 5.0 #mm
+        self.qr_code_size_x = 9.915 #mm
+        self.qr_code_size_y = 9.987 #mm
         # Relative position of the QR code to the load line
         ## X dist defined as the direction from QRTR to Load Line POints -> QRTL = QR code Top Left point, QRTR = QR code Top Right point
         ## When inputing these distances, you need to input the correct signs -> input the actual vector and not just the absolute value
@@ -270,6 +274,27 @@ class App(customtkinter.CTk):
         self.aruco_width = customtkinter.DoubleVar
         self.aruco_height = 500    #pixels
         self.aruco_width  = 500    #pixels
+
+    def slider1_entry_update(self,event):
+        try:
+            value = float(self.slider1_val.get())
+            self.slider_1.set(value)
+            self.draw_lines()  # Or whatever needs to update
+        except ValueError:
+            print("Invalid number input in entry")
+    
+    def slider2_entry_update(self,event):
+        try:
+            value = float(self.slider2_val.get())
+            self.slider_2.set(value)
+            self.draw_lines()  # Or whatever needs to update
+        except ValueError:
+            print("Invalid number input in entry")
+
+    def on_close(self):
+        plt.close('all')  # Closes any matplotlib windows or canvases
+        self.destroy()    # Properly destroys the Tkinter window
+        self.quit()       # Ends the mainloop
 
     def num_of_cycles_entry_return_event(self,event):
         self.cycles = float(self.num_of_cycles_entry.get())
@@ -286,7 +311,9 @@ class App(customtkinter.CTk):
         image_name = os.path.basename(self.image_paths[self.current_image_index])
         self.fig.suptitle(image_name,fontsize=8)
         self.ax.set_title(f"Image index = {self.current_image_index}",fontsize=8)
-        self.fig.canvas.draw()
+        # self.fig.canvas.draw()
+        self.canvas_2d.draw_idle()
+
 
     def load_prev_img(self):
         self.first_calculation_for_image = True
@@ -326,11 +353,11 @@ class App(customtkinter.CTk):
         self.current_image_index = 0
         self.ax.set_title(f"Image index = {self.current_image_index}",fontsize=8)
         # folder_path = self.get_image_folder_path()
-        folder_path = "/Users/filipjerenec/Python Projects/GitHub repos/Crack_measurement/MPBL1_images"
+        folder_path = "MPB1 VHX images"
 
         # Use glob to get all .jpg and .png files (you can add more extensions as needed)
         self.image_paths = glob.glob(os.path.join(folder_path, "*.jpg"))
-        self.image_paths += glob.glob(os.path.join(folder_path, "*.png"))
+        self.image_paths += glob.glob(os.path.join(folder_path, "*.jpg"))
 
         # Load images into a list
         self.images = []
@@ -371,8 +398,8 @@ class App(customtkinter.CTk):
         return
 
     def draw_lines(self):
-        current_height = self.current_original_image.height
-        current_width = self.current_original_image.width
+        # current_height = self.current_original_image.height
+        # current_width = self.current_original_image.width
 
         current_height_homography = self.homography_img.shape[0]
         current_width_homography = self.homography_img.shape[1]
@@ -386,7 +413,8 @@ class App(customtkinter.CTk):
         self.y_dir_line_artist.set_xdata([0,current_width_homography])
         self.y_dir_line_artist.set_ydata([value2,value2])
 
-        self.fig.canvas.draw()
+        # self.fig.canvas.draw()
+        self.canvas_2d.draw_idle()
 
     def slider1_changed(self, value):
         self.slider1_val.set(value)
@@ -399,6 +427,9 @@ class App(customtkinter.CTk):
         return
 
     def calc_crack_length(self):
+        qr_code_size_x = self.get_float(self.aruco_width_entry)
+        qr_code_size_y = self.get_float(self.aruco_height_entry)
+
         top_pin_dx = self.get_float(self.top_pinhole_x_from_p1_entry)
         top_pin_dy = self.get_float(self.top_pinhole_y_from_p1_entry)
         top_pin_vec = np.array([top_pin_dx,top_pin_dy])
@@ -417,19 +448,23 @@ class App(customtkinter.CTk):
         self.aruco_pt1_y_pos_pixels = (self.aruco_corner_points[0,1])
         self.aruco_pt2_x_pos_pixels = (self.aruco_corner_points[1,0])
         self.aruco_pt2_y_pos_pixels = (self.aruco_corner_points[1,1])
-        real_distance_per_pixel = self.qr_code_size/np.sqrt((self.aruco_pt2_x_pos_pixels - self.aruco_pt1_x_pos_pixels)**2 + (self.aruco_pt2_y_pos_pixels-self.aruco_pt1_y_pos_pixels)**2) #[mm/pixel]
-        real_pixel_per_distance = 1/real_distance_per_pixel
+        self.aruco_pt4_x_pos_pixels = (self.aruco_corner_points[3,0])
+        self.aruco_pt4_y_pos_pixels = (self.aruco_corner_points[3,1])
+        real_distance_per_pixel_x = qr_code_size_x/np.sqrt((self.aruco_pt2_x_pos_pixels - self.aruco_pt1_x_pos_pixels)**2 + (self.aruco_pt2_y_pos_pixels-self.aruco_pt1_y_pos_pixels)**2) #[mm/pixel]
+        real_distance_per_pixel_y = qr_code_size_y/np.sqrt((self.aruco_pt4_x_pos_pixels - self.aruco_pt1_x_pos_pixels)**2 + (self.aruco_pt4_y_pos_pixels-self.aruco_pt1_y_pos_pixels)**2) #[mm/pixel]
+        real_pixel_per_distance_x = 1/real_distance_per_pixel_x
+        real_pixel_per_distance_y = 1/real_distance_per_pixel_y
         ####-----------
 
-        self.top_pin_pos_x_pixels = self.aruco_pt1_x_pos_pixels + top_pin_dx*real_pixel_per_distance
-        self.top_pin_pos_y_pixels = self.aruco_pt1_y_pos_pixels + top_pin_dy*real_pixel_per_distance
+        self.top_pin_pos_x_pixels = self.aruco_pt1_x_pos_pixels + top_pin_dx*real_pixel_per_distance_x
+        self.top_pin_pos_y_pixels = self.aruco_pt1_y_pos_pixels + top_pin_dy*real_pixel_per_distance_y
 
-        self.bot_pin_pos_x_pixels = self.aruco_pt1_x_pos_pixels + bot_pin_dx*real_pixel_per_distance
-        self.bot_pin_pos_y_pixels = self.aruco_pt1_y_pos_pixels + bot_pin_dy*real_pixel_per_distance
+        self.bot_pin_pos_x_pixels = self.aruco_pt1_x_pos_pixels + bot_pin_dx*real_pixel_per_distance_x
+        self.bot_pin_pos_y_pixels = self.aruco_pt1_y_pos_pixels + bot_pin_dy*real_pixel_per_distance_y
 
 
         ctip_vec_pixels = np.array([self.ctip_x_pos_pixels-self.aruco_pt1_x_pos_pixels, self.ctip_y_pos_pixels-self.aruco_pt1_y_pos_pixels])
-        ctip_vec = ctip_vec_pixels * real_distance_per_pixel
+        ctip_vec = ctip_vec_pixels * np.array([real_distance_per_pixel_x,real_distance_per_pixel_y])
         rot_matrix= np.array([[0,-1],
                               [1,0]])
 
@@ -558,7 +593,8 @@ class App(customtkinter.CTk):
 
         self.p1_to_ctip_vec_artist.set_xdata([self.aruco_pt1_x_pos_pixels,self.ctip_x_pos_pixels])
         self.p1_to_ctip_vec_artist.set_ydata([self.aruco_pt1_y_pos_pixels,self.ctip_y_pos_pixels])
-        self.fig.canvas.draw()
+        # self.fig.canvas.draw()
+        self.canvas_2d.draw_idle()
         return
 
 
