@@ -340,8 +340,6 @@ class App(customtkinter.CTk):
         return
 
     def save_data_to_file(self):
-
-
         df = pd.DataFrame(self.results, columns=["Image Name", "Current Image Index","Crack Length","Number of Cycles"])
         df.to_csv("output.txt", sep="\t", index=False)
         print("File saved successfully!")
@@ -353,7 +351,7 @@ class App(customtkinter.CTk):
         self.current_image_index = 0
         self.ax.set_title(f"Image index = {self.current_image_index}",fontsize=8)
         # folder_path = self.get_image_folder_path()
-        folder_path = "MPB1 VHX images"
+        folder_path = "MPBL2 Aramis images"
 
         # Use glob to get all .jpg and .png files (you can add more extensions as needed)
         self.image_paths = glob.glob(os.path.join(folder_path, "*.jpg"))
@@ -481,7 +479,7 @@ class App(customtkinter.CTk):
         print(f"top_pin_to_ctip_vec = {top_pin_to_ctip_vec}")
 
         crack_length = np.dot(top_pin_to_ctip_vec, load_line_binormal)
-
+        print("! End !")
         return crack_length
 
     def homography_image(self):
@@ -567,6 +565,7 @@ class App(customtkinter.CTk):
         self.slider_2.configure(from_ = 0, to =new_height, number_of_steps = new_height)
 
         if self.first_calculation_for_image == True:
+            print("True")
             self.ax2.imshow(self.homography_img)
         
         self.first_calculation_for_image = False
