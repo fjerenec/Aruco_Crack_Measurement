@@ -1,0 +1,2 @@
+"""Modern crack measurement application."""
+
