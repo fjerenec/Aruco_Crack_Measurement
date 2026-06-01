@@ -19,6 +19,16 @@ The project contains:
 - crash-recovery autosave for the current measurement session
 - a committed Windows build under `release/ArucoCrackMeasurement/`
 
+## Interface Preview
+
+Image measurement workflow:
+
+![Image Measurement UI](docs/ui-measurement.png)
+
+Crack-growth plotting workflow:
+
+![Crack Growth UI](docs/ui-crack-growth.png)
+
 ## Project Layout
 
 - `main/Aruco_crack_len_measurement.py`:
@@ -77,6 +87,8 @@ To run it on another PC:
 Important:
 - Do not copy only the `.exe` by itself.
 - The executable depends on the bundled `_internal` folder that PyInstaller creates.
+- The target PC does not need Python installed.
+- If startup fails, the app writes a crash report under `%LOCALAPPDATA%\ArucoCrackMeasurement\crash_reports\`.
 
 ## Building The Windows Executable
 
@@ -124,7 +136,7 @@ If you ever want to do the build manually instead of using the script:
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-python -m PyInstaller --noconfirm --clean --windowed --name ArucoCrackMeasurement --distpath release --workpath build main\Aruco_crack_len_measurement.py
+python -m PyInstaller --noconfirm --clean --windowed --name ArucoCrackMeasurement --recursive-copy-metadata PySide6 --copy-metadata shiboken6 --distpath release --workpath build main\Aruco_crack_len_measurement.py
 ```
 
 ### Build prerequisites

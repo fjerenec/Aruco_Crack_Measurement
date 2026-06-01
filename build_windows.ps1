@@ -48,6 +48,8 @@ Write-Host "Building Windows executable ..."
     --clean `
     --windowed `
     --name ArucoCrackMeasurement `
+    --recursive-copy-metadata PySide6 `
+    --copy-metadata shiboken6 `
     --distpath $distPath `
     --workpath $workPath `
     $entryPoint
@@ -63,6 +65,7 @@ Run:
 Important:
 - Keep the entire folder together when copying it to another PC.
 - Do not move only the .exe file by itself; it depends on the bundled files in _internal.
+- Python does not need to be installed on the target PC.
 "@ | Set-Content -Path $releaseReadme -Encoding UTF8
 
 Write-Host ""
